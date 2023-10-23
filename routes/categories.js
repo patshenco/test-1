@@ -1,4 +1,6 @@
 const Category = require("../models/category");
+const Subcategory = require("../models/subcategory");
+
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -114,6 +116,92 @@ route.get("/categories/:id", async (req, res) => {
     res.status(500).json({ status: 500, message: "Internal Server Error" });
   }
 });
+
+
+route.put("/categories/:id", async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    const { categoryName } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid category ID",
+      });
+    }
+
+    // Check if the category name already exists, excluding the current category being updated
+    const existingCategory = await Category.findOne({ categoryName, _id: { $ne: categoryId } });
+
+    if (existingCategory) {
+      return res.status(400).json({
+        status: 400,
+        message: `The category '${categoryName}' already exists`,
+      });
+    }
+
+    const category = await Category.findById(categoryId);
+
+    if (!category) {
+      return res.status(404).json({
+        status: 404,
+        message: "Category not found",
+      });
+    }
+
+    // Update the category data
+    category.categoryName = categoryName;
+
+    // Save the updated category to the database
+    const updatedCategory = await category.save();
+
+    res.status(200).json({ status: 200, data: updatedCategory });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 500, message: "Internal Server Error" });
+  }
+});
+
+route.delete("/categories/:id", async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      return res.status(400).json({
+        status: 400,
+        message: "Invalid category ID",
+      });
+    }
+
+    // Check if the category has any associated subcategories
+    const subcategories = await Subcategory.find({ parentCategory: categoryId });
+
+    if (subcategories.length > 0) {
+      return res.status(400).json({
+        status: 400,
+        message: "Cannot delete a category with associated subcategories",
+      });
+    }
+
+    const result = await Category.deleteOne({ _id: categoryId });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "Category not found",
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Category deleted successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 500, message: "Internal Server Error" });
+  }
+});
+
 
 
 
