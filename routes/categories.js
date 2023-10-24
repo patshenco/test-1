@@ -1,10 +1,8 @@
 const Category = require("../models/category");
 const Subcategory = require("../models/subcategory");
 
-
 const express = require("express");
 const mongoose = require("mongoose");
-
 
 const route = express.Router();
 
@@ -50,10 +48,14 @@ route.get("/categories", async (req, res) => {
 
     // Check if there are no categories
     if (categories.length === 0) {
-      return res.status(200).json({ status: 200, data: [], total: totalCategories, page });
+      return res
+        .status(200)
+        .json({ status: 200, data: [], total: totalCategories, page });
     }
 
-    res.status(200).json({ status: 200, data: categories, total: totalCategories, page });
+    res
+      .status(200)
+      .json({ status: 200, data: categories, total: totalCategories, page });
   } catch (err) {
     console.error(err);
     res.status(500).json({ status: 500, message: "Internal Server Error" });
@@ -62,13 +64,14 @@ route.get("/categories", async (req, res) => {
 
 route.get("/categories/search", async (req, res) => {
   try {
-    const query = req.query.query; 
-    const page = parseInt(req.query.page) || 1; 
-    const limit = 10; 
+    const query = req.query.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
     const skip = (page - 1) * limit;
 
-    
-    const categories = await Category.find({ categoryName: { $regex: query, $options: 'i' } })
+    const categories = await Category.find({
+      categoryName: { $regex: query, $options: "i" },
+    })
       .skip(skip)
       .limit(limit);
 
@@ -77,7 +80,9 @@ route.get("/categories/search", async (req, res) => {
       return res.status(200).json({ status: 200, data: [] });
     }
 
-    const totalCategories = await Category.countDocuments({ categoryName: { $regex: query, $options: 'i' } }); 
+    const totalCategories = await Category.countDocuments({
+      categoryName: { $regex: query, $options: "i" },
+    });
     res.status(200).json({
       status: 200,
       data: categories,
@@ -117,7 +122,6 @@ route.get("/categories/:id", async (req, res) => {
   }
 });
 
-
 route.put("/categories/:id", async (req, res) => {
   try {
     const categoryId = req.params.id;
@@ -131,7 +135,10 @@ route.put("/categories/:id", async (req, res) => {
     }
 
     // Check if the category name already exists, excluding the current category being updated
-    const existingCategory = await Category.findOne({ categoryName, _id: { $ne: categoryId } });
+    const existingCategory = await Category.findOne({
+      categoryName,
+      _id: { $ne: categoryId },
+    });
 
     if (existingCategory) {
       return res.status(400).json({
@@ -174,7 +181,9 @@ route.delete("/categories/:id", async (req, res) => {
     }
 
     // Check if the category has any associated subcategories
-    const subcategories = await Subcategory.find({ parentCategory: categoryId });
+    const subcategories = await Subcategory.find({
+      parentCategory: categoryId,
+    });
 
     if (subcategories.length > 0) {
       return res.status(400).json({
@@ -201,7 +210,6 @@ route.delete("/categories/:id", async (req, res) => {
     res.status(500).json({ status: 500, message: "Internal Server Error" });
   }
 });
-
 
 
 
